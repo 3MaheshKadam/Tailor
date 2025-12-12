@@ -24,9 +24,22 @@ interface Order {
   deadline: string;
 }
 
+interface OrdersResponse {
+  orders: Order[];
+}
+
+interface Stat {
+  title: string;
+  value: string;
+  icon: JSX.Element;
+  color: string;
+  bgColor: string;
+  textColor: string;
+}
+
 export default function AdminDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [stats, setStats] = useState([
+  const [stats, setStats] = useState<Stat[]>([
     {
       title: 'Total Orders',
       value: '0',
@@ -86,7 +99,7 @@ export default function AdminDashboard() {
           throw new Error('Failed to fetch orders');
         }
 
-        const data = await response.json();
+        const data = await response.json() as OrdersResponse;
         setOrders(data.orders);
 
         // Compute stats
