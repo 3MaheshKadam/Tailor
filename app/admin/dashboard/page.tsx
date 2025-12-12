@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 
 interface Order {
   _id: string;
@@ -31,7 +32,7 @@ interface OrdersResponse {
 interface Stat {
   title: string;
   value: string;
-  icon: JSX.Element;
+  icon: ReactElement;
   color: string;
   bgColor: string;
   textColor: string;
