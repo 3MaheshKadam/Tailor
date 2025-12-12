@@ -3,11 +3,28 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 
+interface Billing {
+  amount: number;
+  balance: number;
+}
+
+interface Order {
+  _id: string;
+  customerName: string;
+  customerPhone: string;
+  garmentType: string;
+  billing: Billing;
+  status: string;
+  deadline: string;
+  assignedTailor?: unknown; // Can be refined if more details are known
+  createdAt: string;
+}
+
 export default function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,7 +61,7 @@ export default function OrdersPage() {
     fetchOrders();
   }, []);
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'pending':
         return 'bg-orange-100 text-orange-700';
