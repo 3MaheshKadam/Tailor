@@ -3,8 +3,29 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+interface Order {
+  _id: string;
+  customerName?: string;
+  customerId?: string;
+  customerPhone?: string;
+  copies?: {
+    admin?: {
+      customer?: {
+        name?: string;
+        phone?: string;
+      };
+    };
+  };
+  garmentType: string;
+  billing: {
+    amount: number;
+  };
+  status: string;
+  deadline: string;
+}
+
 export default function AdminDashboard() {
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [stats, setStats] = useState([
     {
       title: 'Total Orders',
@@ -71,9 +92,9 @@ export default function AdminDashboard() {
         // Compute stats
         const today = new Date(2025, 11, 12); // December 12, 2025
 
-       const parseDeadline = (dateStr: string) => {
-  return new Date(dateStr);
-};
+        const parseDeadline = (dateStr: string) => {
+          return new Date(dateStr);
+        };
 
         const orderList = data.orders;
         const totalOrders = orderList.length;
@@ -99,7 +120,7 @@ export default function AdminDashboard() {
 
   const recentOrders = orders.slice(-5).reverse(); // Last 5 recent orders
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'measuring':
         return 'bg-blue-100 text-blue-700';
