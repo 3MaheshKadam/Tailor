@@ -1,93 +1,18 @@
-.next/
-types/
-  cache-life.d.ts
-  routes.d.ts
-  validator.ts
-  measurements.d.ts
-  orders.d.ts
-  user.d.ts
-  api.d.ts
-
+.env.local
+.gitignore
 app/
-  favicon.ico
-  globals.css
-  layout.tsx
-  page.tsx
-  features/
-    page.tsx
-  pricing/
-    page.tsx
-  about/
-    page.tsx
-  contact/
-    page.tsx
-  auth/
-    login/
-      page.tsx
-  admin/
-    layout.tsx
-    dashboard/
-      page.tsx
-    customers/
-      page.tsx
-      new/
-        page.tsx
-      [customerId]/
-        page.tsx
-    orders/
-      page.tsx
-      new/
-        page.tsx
-        measurements/
-          page.tsx
-        billing/
-          page.tsx
-        review/
-          page.tsx
-      [orderId]/
-        page.tsx
-        edit/
-          page.tsx
-        admin-copy/
-          page.tsx
-        tailor-copy/
-          page.tsx
-        customer-copy/
-          page.tsx
-    settings/
-      page.tsx
-    notifications/
-      page.tsx
-  tailor/
-    layout.tsx
-    dashboard/
-      page.tsx
-    orders/
-      page.tsx
-      [orderId]/
-        page.tsx
-        update-status/
-          page.tsx
-  customer/
-    layout.tsx
-    page.tsx
-    orders/
-      [phone]/
-        page.tsx
-    receipt/
-      [orderId]/
-        page.tsx
-    track/
-      [orderId]/
-        page.tsx
   api/
     auth/
       login/
         route.ts
+      register/
+        route.ts
+
     customers/
       route.ts
       [customerId]/
         route.ts
+
     orders/
       route.ts
       [orderId]/
@@ -97,84 +22,159 @@ app/
           route.ts
       generate-copies/
         route.ts
+
     tailor/
       assign/
         route.ts
       update-status/
         route.ts
+
     notifications/
       whatsapp/
         route.ts
 
-components/
-  layout/
-    AdminSidebar.tsx
-    TailorSidebar.tsx
-    CustomerSidebar.tsx
-    AdminHeader.tsx
-    TailorHeader.tsx
- 
+    pdf/
+      generate/
+        route.ts
+
+  about/
+    page.tsx
   admin/
-    AdminOrderCard.tsx
-    AdminCustomerCard.tsx
-    OrdersTable.tsx
+    customers/
+      new/
+        page.tsx
+      page.tsx
+      [customerId]/
+        page.tsx
+    dashboard/
+      page.tsx
+    layout.tsx
+    notifications/
+      page.tsx
+    orders/
+      new/
+        billing/
+          page.tsx
+        measurements/
+          page.tsx
+        page.tsx
+        review/
+          page.tsx
+      page.tsx
+      [orderId]/
+        admin-copy/
+          page.tsx
+        customer-copy/
+          page.tsx
+        edit/
+          page.tsx
+        page.tsx
+        tailor-copy/
+          page.tsx
+    settings/
+      page.tsx
+  auth/
+    login/
+      page.tsx
+    register/
+      page.tsx
+  contact/
+    page.tsx
+  customer/
+    layout.tsx
+    orders/
+      [orderId]/
+        page.tsx
+    page.tsx
+    profile/
+      page.tsx
+    receipt/
+      [orderId]/
+        page.tsx
+    track/
+      [orderId]/
+        page.tsx
+  favicon.ico
+  features/
+    page.tsx
+  globals.css
+  layout.tsx
+  page.tsx
+  pricing/
+    page.tsx
   tailor/
-    TailorOrderCard.tsx
+    dashboard/
+      page.tsx
+    layout.tsx
+    orders/
+      page.tsx
+      [orderId]/
+        page.tsx
+        update-status/
+          page.tsx
+components/
+  admin/
+    AdminCustomerCard.tsx
+    AdminOrderCard.tsx
+    OrdersTable.tsx
+  landing/
+    CTASection.tsx
+    FeatureCard.tsx
+    Features.tsx
+    FeaturesGrid.tsx
+    Footer.tsx
+    HeroSection.tsx
+    HowItWorks.tsx
+    Navbar.tsx
+    Testimonials.tsx
+    UseCases.tsx
+  layout/
+    AdminHeader.tsx
+    AdminSidebar.tsx
+    CustomerHeader.tsx
+    CustomerSidebar.tsx
+    TailorHeader.tsx
+    TailorSidebar.tsx
   measurement/
-    MeasurementForm.tsx
-    ShirtMeasurement.tsx
-    PantMeasurement.tsx
     BlouseMeasurement.tsx
     BodyGuideTooltip.tsx
+    MeasurementForm.tsx
+    PantMeasurement.tsx
+    ShirtMeasurement.tsx
   receipt/
     AdminCopy.tsx
-    TailorCopy.tsx
     CustomerCopy.tsx
-  landing/
-    HeroSection.tsx
-    FeaturesGrid.tsx
-    FeatureCard.tsx
-    HowItWorks.tsx
-    UseCases.tsx
-    Testimonials.tsx
-    CTASection.tsx
-    Navbar.tsx
-    Footer.tsx
-
-lib/
-  db.ts
-  auth.ts
-  order.ts
-  measurement.ts
-  constants.ts
-
-utils/
-  formatter.ts
-  permissions.ts
-  notifications.ts
-  sort.ts
-  validation.ts
-
-public/
-  logo.svg
-  male-body-guide.png
-  female-body-guide.png
-  icons/
-    admin.svg
-    tailor.svg
-    customer.svg
-    shirt.svg
-    pant.svg
-    blouse.svg
-    kurta.svg
-
-
-
+    TailorCopy.tsx
+  tailor/
+    TailorHeader.tsx
+    TailorOrderCard.tsx
+    TailorSidebar.tsx
 eslint.config.mjs
+lib/
+  db.ts                
+  models/
+    Customer.ts
+    Order.ts
+    Tailor.ts
+    Measurement.ts
 next-env.d.ts
 next.config.ts
-package.json
 package-lock.json
+package.json
 postcss.config.mjs
 README.md
 tsconfig.json
+types/
+  api.d.ts
+  cache-life.d.ts
+  measurements.d.ts
+  orders.d.ts
+  routes.d.ts
+  user.d.ts
+  validator.ts
+utils/
+  formatter.ts
+  notifications.ts
+  permissions.ts
+  sort.ts
+  validation.ts
