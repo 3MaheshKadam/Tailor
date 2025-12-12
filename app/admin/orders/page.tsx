@@ -1,159 +1,72 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Dummy data for orders
-  const allOrders = [
-    {
-      id: 'ORD-1234',
-      customer: {
-        name: 'Rajesh Kumar',
-        phone: '+91 98765 43210',
-      },
-      items: '2 Shirts + 1 Pant',
-      itemsCount: 3,
-      amount: 2500,
-      status: 'In Progress',
-      statusColor: 'bg-yellow-100 text-yellow-700',
-      deadline: '15 Dec 2024',
-      orderDate: '8 Dec 2024',
-      assignedTo: 'Ramesh (Tailor)',
-      advance: 1000,
-      remaining: 1500,
-    },
-    {
-      id: 'ORD-1235',
-      customer: {
-        name: 'Priya Sharma',
-        phone: '+91 98765 43211',
-      },
-      items: '1 Blouse',
-      itemsCount: 1,
-      amount: 800,
-      status: 'Ready',
-      statusColor: 'bg-green-100 text-green-700',
-      deadline: '10 Dec 2024',
-      orderDate: '3 Dec 2024',
-      assignedTo: 'Suresh (Tailor)',
-      advance: 800,
-      remaining: 0,
-    },
-    {
-      id: 'ORD-1236',
-      customer: {
-        name: 'Amit Patel',
-        phone: '+91 98765 43212',
-      },
-      items: '3 Shirts',
-      itemsCount: 3,
-      amount: 3600,
-      status: 'Measuring',
-      statusColor: 'bg-blue-100 text-blue-700',
-      deadline: '20 Dec 2024',
-      orderDate: '9 Dec 2024',
-      assignedTo: 'Not Assigned',
-      advance: 1500,
-      remaining: 2100,
-    },
-    {
-      id: 'ORD-1237',
-      customer: {
-        name: 'Sneha Reddy',
-        phone: '+91 98765 43213',
-      },
-      items: '1 Kurta + 1 Pant',
-      itemsCount: 2,
-      amount: 2200,
-      status: 'In Progress',
-      statusColor: 'bg-yellow-100 text-yellow-700',
-      deadline: '18 Dec 2024',
-      orderDate: '7 Dec 2024',
-      assignedTo: 'Ramesh (Tailor)',
-      advance: 1000,
-      remaining: 1200,
-    },
-    {
-      id: 'ORD-1238',
-      customer: {
-        name: 'Vikram Singh',
-        phone: '+91 98765 43214',
-      },
-      items: '2 Pants',
-      itemsCount: 2,
-      amount: 1800,
-      status: 'Ready',
-      statusColor: 'bg-green-100 text-green-700',
-      deadline: '12 Dec 2024',
-      orderDate: '5 Dec 2024',
-      assignedTo: 'Suresh (Tailor)',
-      advance: 1800,
-      remaining: 0,
-    },
-    {
-      id: 'ORD-1239',
-      customer: {
-        name: 'Anita Desai',
-        phone: '+91 98765 43215',
-      },
-      items: '1 Blouse + 1 Kurta',
-      itemsCount: 2,
-      amount: 2000,
-      status: 'Delivered',
-      statusColor: 'bg-gray-100 text-gray-700',
-      deadline: '5 Dec 2024',
-      orderDate: '28 Nov 2024',
-      assignedTo: 'Ramesh (Tailor)',
-      advance: 2000,
-      remaining: 0,
-    },
-    {
-      id: 'ORD-1240',
-      customer: {
-        name: 'Rahul Mehta',
-        phone: '+91 98765 43216',
-      },
-      items: '4 Shirts',
-      itemsCount: 4,
-      amount: 4800,
-      status: 'Pending',
-      statusColor: 'bg-orange-100 text-orange-700',
-      deadline: '25 Dec 2024',
-      orderDate: '10 Dec 2024',
-      assignedTo: 'Not Assigned',
-      advance: 2000,
-      remaining: 2800,
-    },
-    {
-      id: 'ORD-1241',
-      customer: {
-        name: 'Kavita Iyer',
-        phone: '+91 98765 43217',
-      },
-      items: '2 Kurtas + 2 Pants',
-      itemsCount: 4,
-      amount: 4400,
-      status: 'In Progress',
-      statusColor: 'bg-yellow-100 text-yellow-700',
-      deadline: '22 Dec 2024',
-      orderDate: '9 Dec 2024',
-      assignedTo: 'Suresh (Tailor)',
-      advance: 2000,
-      remaining: 2400,
-    },
-  ];
+  useEffect(() => {
+    const fetchOrders = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          // Redirect to login if no token
+          window.location.href = '/auth/login';
+          return;
+        }
 
-  // Filter orders
-  const filteredOrders = allOrders.filter((order) => {
+        const response = await fetch('/api/orders', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch orders');
+        }
+
+        const data = await response.json();
+        setOrders(data.orders || []);
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
+  const getStatusColor = (status) => {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return 'bg-orange-100 text-orange-700';
+      case 'measuring':
+        return 'bg-blue-100 text-blue-700';
+      case 'tailoring':
+      case 'in progress':
+        return 'bg-yellow-100 text-yellow-700';
+      case 'ready':
+        return 'bg-green-100 text-green-700';
+      case 'delivered':
+        return 'bg-gray-100 text-gray-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const filteredOrders = orders.filter((order) => {
     const matchesSearch = 
-      order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customer.phone.includes(searchQuery);
+      order._id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.customerPhone.includes(searchQuery);
     
     const matchesStatus = 
       filterStatus === 'all' || 
@@ -164,13 +77,17 @@ export default function OrdersPage() {
 
   // Calculate stats
   const stats = {
-    all: allOrders.length,
-    pending: allOrders.filter(o => o.status === 'Pending').length,
-    measuring: allOrders.filter(o => o.status === 'Measuring').length,
-    inProgress: allOrders.filter(o => o.status === 'In Progress').length,
-    ready: allOrders.filter(o => o.status === 'Ready').length,
-    delivered: allOrders.filter(o => o.status === 'Delivered').length,
+    all: orders.length,
+    pending: orders.filter(o => o.status.toLowerCase() === 'pending').length,
+    measuring: orders.filter(o => o.status.toLowerCase() === 'measuring').length,
+    inProgress: orders.filter(o => o.status.toLowerCase() === 'tailoring' || o.status.toLowerCase() === 'in progress').length,
+    ready: orders.filter(o => o.status.toLowerCase() === 'ready').length,
+    delivered: orders.filter(o => o.status.toLowerCase() === 'delivered').length,
   };
+
+  if (loading) {
+    return <div className="text-center py-12">Loading orders...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -336,7 +253,7 @@ export default function OrdersPage() {
         {/* Results Count */}
         <div className="mt-4 text-sm text-gray-600">
           Showing <span className="font-bold text-gray-900">{filteredOrders.length}</span> of{' '}
-          <span className="font-bold text-gray-900">{allOrders.length}</span> orders
+          <span className="font-bold text-gray-900">{orders.length}</span> orders
         </div>
       </div>
 
@@ -362,39 +279,39 @@ export default function OrdersPage() {
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {filteredOrders.map((order) => (
-                      <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                      <tr key={order._id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4">
-                          <span className="font-bold text-blue-600">{order.id}</span>
+                          <span className="font-bold text-blue-600">{order._id}</span>
                         </td>
                         <td className="px-6 py-4">
                           <div>
-                            <p className="font-semibold text-gray-900">{order.customer.name}</p>
-                            <p className="text-sm text-gray-500">{order.customer.phone}</p>
+                            <p className="font-semibold text-gray-900">{order.customerName}</p>
+                            <p className="text-sm text-gray-500">{order.customerPhone}</p>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-gray-700">{order.items}</td>
+                        <td className="px-6 py-4 text-gray-700">{order.garmentType}</td>
                         <td className="px-6 py-4">
                           <div>
-                            <p className="font-bold text-gray-900">₹{order.amount.toLocaleString()}</p>
-                            {order.remaining > 0 && (
-                              <p className="text-xs text-red-600">Pending: ₹{order.remaining}</p>
+                            <p className="font-bold text-gray-900">₹{order.billing.amount}</p>
+                            {order.billing.balance > 0 && (
+                              <p className="text-xs text-red-600">Pending: ₹{order.billing.balance}</p>
                             )}
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`px-3 py-1 rounded-full text-sm font-semibold ${order.statusColor}`}>
+                          <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(order.status)}`}>
                             {order.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-gray-700">{order.deadline}</td>
+                        <td className="px-6 py-4 text-gray-700">{new Date(order.deadline).toLocaleDateString()}</td>
                         <td className="px-6 py-4">
-                          <span className={`text-sm ${order.assignedTo === 'Not Assigned' ? 'text-red-600 font-semibold' : 'text-gray-700'}`}>
-                            {order.assignedTo}
+                          <span className={`text-sm ${!order.assignedTailor ? 'text-red-600 font-semibold' : 'text-gray-700'}`}>
+                            {order.assignedTailor ? 'Assigned' : 'Not Assigned'}
                           </span>
                         </td>
                         <td className="px-6 py-4">
                           <Link
-                            href={`/admin/orders/${order.id}`}
+                            href={`/admin/orders/${order._id}`}
                             className="px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 rounded-lg transition-colors inline-block"
                           >
                             View
@@ -413,23 +330,23 @@ export default function OrdersPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredOrders.map((order) => (
                 <div
-                  key={order.id}
+                  key={order._id}
                   className="bg-white rounded-xl border border-gray-200 hover:shadow-xl transition-all transform hover:-translate-y-1"
                 >
                   {/* Card Header */}
                   <div className="p-6 border-b border-gray-200">
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <h3 className="text-xl font-bold text-blue-600">{order.id}</h3>
-                        <p className="text-sm text-gray-500">{order.orderDate}</p>
+                        <h3 className="text-xl font-bold text-blue-600">{order._id}</h3>
+                        <p className="text-sm text-gray-500">{new Date(order.createdAt).toLocaleDateString()}</p>
                       </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${order.statusColor}`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(order.status)}`}>
                         {order.status}
                       </span>
                     </div>
                     <div>
-                      <p className="font-bold text-gray-900">{order.customer.name}</p>
-                      <p className="text-sm text-gray-600">{order.customer.phone}</p>
+                      <p className="font-bold text-gray-900">{order.customerName}</p>
+                      <p className="text-sm text-gray-600">{order.customerPhone}</p>
                     </div>
                   </div>
 
@@ -437,26 +354,26 @@ export default function OrdersPage() {
                   <div className="p-6 space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">Items</span>
-                      <span className="font-semibold text-gray-900">{order.items}</span>
+                      <span className="font-semibold text-gray-900">{order.garmentType}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">Amount</span>
-                      <span className="font-bold text-gray-900">₹{order.amount.toLocaleString()}</span>
+                      <span className="font-bold text-gray-900">₹{order.billing.amount.toLocaleString()}</span>
                     </div>
-                    {order.remaining > 0 && (
+                    {order.billing.balance > 0 && (
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Remaining</span>
-                        <span className="font-semibold text-red-600">₹{order.remaining.toLocaleString()}</span>
+                        <span className="font-semibold text-red-600">₹{order.billing.balance.toLocaleString()}</span>
                       </div>
                     )}
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">Deadline</span>
-                      <span className="font-semibold text-gray-900">{order.deadline}</span>
+                      <span className="font-semibold text-gray-900">{new Date(order.deadline).toLocaleDateString()}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">Assigned To</span>
-                      <span className={`text-sm font-semibold ${order.assignedTo === 'Not Assigned' ? 'text-red-600' : 'text-gray-900'}`}>
-                        {order.assignedTo}
+                      <span className={`text-sm font-semibold ${!order.assignedTailor ? 'text-red-600' : 'text-gray-900'}`}>
+                        {order.assignedTailor ? 'Assigned' : 'Not Assigned'}
                       </span>
                     </div>
                   </div>
@@ -464,7 +381,7 @@ export default function OrdersPage() {
                   {/* Card Footer */}
                   <div className="p-4 bg-gray-50 border-t border-gray-200">
                     <Link
-                      href={`/admin/orders/${order.id}`}
+                      href={`/admin/orders/${order._id}`}
                       className="block w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors text-center"
                     >
                       View Details

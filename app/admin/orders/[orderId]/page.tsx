@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function OrderDetailsPage() {
   const params = useParams();
@@ -10,76 +10,73 @@ export default function OrderDetailsPage() {
   const orderId = params.orderId;
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [currentStatus, setCurrentStatus] = useState('In Progress');
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Dummy order data
-  const order = {
-    id: orderId,
-    orderDate: '8 Dec 2024',
-    customer: {
-      id: 'CUST-001',
-      name: 'Rajesh Kumar',
-      phone: '+91 98765 43210',
-      email: 'rajesh@email.com',
-      address: 'Shop No. 12, MG Road, Mumbai',
-      gender: 'Male',
-    },
-    items: [
-      {
-        garment: 'Shirt',
-        quantity: 2,
-        costPerItem: 1200,
-        measurements: {
-          chest: '38',
-          shoulder: '17',
-          waist: '34',
-          shirtLength: '30',
-          sleeveLength: '24',
-          collar: '15',
-        },
-      },
-      {
-        garment: 'Pant',
-        quantity: 1,
-        costPerItem: 1000,
-        measurements: {
-          waist: '32',
-          hip: '38',
-          thigh: '22',
-          pantLength: '40',
-        },
-      },
-    ],
-    billing: {
-      subtotal: 3400,
-      additionalCharges: 100,
-      discount: 0,
-      total: 3500,
-      advancePaid: 1500,
-      remaining: 2000,
-      paymentMode: 'Cash',
-    },
-    preferences: {
-      fitPreference: 'Regular',
-      fabricType: 'Cotton',
-      specialInstructions: 'Customer prefers slim fit shirts with button-down collar',
-    },
-    assignedTo: 'Ramesh Kumar',
-    tailorId: 'TAILOR-001',
-    status: 'In Progress',
-    deadline: '15 Dec 2024',
-    statusHistory: [
-      { status: 'Order Created', date: '8 Dec 2024 10:30 AM', completed: true },
-      { status: 'Assigned to Tailor', date: '8 Dec 2024 11:00 AM', completed: true },
-      { status: 'In Progress', date: '9 Dec 2024 09:15 AM', completed: true },
-      { status: 'Ready', date: '', completed: false },
-      { status: 'Delivered', date: '', completed: false },
-    ],
-  };
+  useEffect(() => {
+    const fetchOrder = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          router.push('/auth/login');
+          return;
+        }
 
-  const handleStatusUpdate = (newStatus: string) => {
-    setCurrentStatus(newStatus);
-    alert(`Order status updated to: ${newStatus}`);
+        const response = await fetch(`/api/orders/${orderId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch order details');
+        }
+
+        const data = await response.json();
+        setOrder(data.order);
+      } catch (err) {
+        console.error('Error fetching order:', err);
+        setError('Failed to load order details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (orderId) {
+      fetchOrder();
+    }
+  }, [orderId, router]);
+
+  const handleStatusUpdate = async (newStatus: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/tailor/update-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          orderId,
+          status: newStatus.toLowerCase(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update status');
+      }
+
+      const updatedData = await response.json();
+      setOrder(updatedData.order);
+      alert(`Order status updated to: ${newStatus}`);
+    } catch (err) {
+      console.error('Error updating status:', err);
+      alert('Failed to update status');
+    }
   };
 
   const handleDelete = () => {
@@ -91,6 +88,22 @@ export default function OrderDetailsPage() {
   const handlePrint = (copyType: string) => {
     alert(`Opening ${copyType} for printing...`);
   };
+
+  if (loading) {
+    return <div className="text-center py-12">Loading order details...</div>;
+  }
+
+  if (error || !order) {
+    return <div className="text-center py-12 text-red-600">{error || 'Order not found'}</div>;
+  }
+
+  const currentStatus = order.status.charAt(0).toUpperCase() + order.status.slice(1);
+
+  const statusHistory = order.timeline.map(entry => ({
+    status: entry.status.charAt(0).toUpperCase() + entry.status.slice(1),
+    date: new Date(entry.at).toLocaleString(),
+    completed: true,
+  }));
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -107,12 +120,12 @@ export default function OrderDetailsPage() {
         </Link>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-black text-gray-900">{order.id}</h1>
+            <h1 className="text-3xl font-black text-gray-900">{order._id}</h1>
             <span className="px-4 py-1 bg-yellow-100 text-yellow-700 text-sm font-bold rounded-full">
               {currentStatus}
             </span>
           </div>
-          <p className="text-gray-600 mt-1">Order placed on {order.orderDate}</p>
+          <p className="text-gray-600 mt-1">Order placed on {new Date(order.createdAt).toLocaleDateString()}</p>
         </div>
         <div className="flex gap-3">
           <Link
@@ -154,24 +167,24 @@ export default function OrderDetailsPage() {
             <div className="p-6 space-y-3">
               <div>
                 <p className="text-sm text-gray-500">Name</p>
-                <p className="font-bold text-gray-900">{order.customer.name}</p>
+                <p className="font-bold text-gray-900">{order.customerName}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Phone</p>
-                <p className="font-semibold text-gray-900">{order.customer.phone}</p>
+                <p className="font-semibold text-gray-900">{order.customerPhone}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Email</p>
-                <p className="font-semibold text-gray-900">{order.customer.email}</p>
+                <p className="font-semibold text-gray-900">{order.email || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Address</p>
-                <p className="font-semibold text-gray-900">{order.customer.address}</p>
+                <p className="font-semibold text-gray-900">{order.customerAddress}</p>
               </div>
             </div>
             <div className="p-4 bg-gray-50 border-t border-gray-200">
               <Link
-                href={`/admin/customers/${order.customer.id}`}
+                href={`/admin/customers/${order.customerId || 'unknown'}`}
                 className="block text-center px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 rounded-lg transition-colors"
               >
                 View Customer Profile
@@ -190,44 +203,33 @@ export default function OrderDetailsPage() {
             <div className="space-y-3">
               <div className="flex justify-between py-2 border-b border-blue-200">
                 <span className="text-gray-700">Subtotal</span>
-                <span className="font-semibold text-gray-900">₹{order.billing.subtotal.toLocaleString()}</span>
+                <span className="font-semibold text-gray-900">₹{order.billing.amount.toLocaleString()}</span>
               </div>
-              {order.billing.additionalCharges > 0 && (
-                <div className="flex justify-between py-2 border-b border-blue-200">
-                  <span className="text-gray-700">Additional Charges</span>
-                  <span className="font-semibold text-green-600">+₹{order.billing.additionalCharges}</span>
-                </div>
-              )}
-              {order.billing.discount > 0 && (
-                <div className="flex justify-between py-2 border-b border-blue-200">
-                  <span className="text-gray-700">Discount</span>
-                  <span className="font-semibold text-red-600">-₹{order.billing.discount}</span>
-                </div>
-              )}
+              {/* Assume no additional/discount in response, add if available */}
               <div className="flex justify-between py-3 border-b-2 border-blue-400">
                 <span className="font-bold text-gray-900">Total Amount</span>
-                <span className="text-xl font-black text-blue-600">₹{order.billing.total.toLocaleString()}</span>
+                <span className="text-xl font-black text-blue-600">₹{order.billing.amount.toLocaleString()}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-blue-200">
                 <span className="text-gray-700">Advance Paid</span>
-                <span className="font-semibold text-green-600">₹{order.billing.advancePaid.toLocaleString()}</span>
+                <span className="font-semibold text-green-600">₹{order.billing.advance.toLocaleString()}</span>
               </div>
               <div className="flex justify-between py-3 bg-white rounded-xl px-4">
                 <span className="font-bold text-gray-900">Remaining</span>
                 <span className={`text-xl font-black ${
-                  order.billing.remaining > 0 ? 'text-orange-600' : 'text-green-600'
+                  order.billing.balance > 0 ? 'text-orange-600' : 'text-green-600'
                 }`}>
-                  ₹{order.billing.remaining.toLocaleString()}
+                  ₹{order.billing.balance.toLocaleString()}
                 </span>
               </div>
               <div className="pt-3 border-t border-blue-200">
                 <div className="flex justify-between mb-2">
                   <span className="text-sm text-gray-600">Payment Mode</span>
-                  <span className="text-sm font-semibold text-gray-900">{order.billing.paymentMode}</span>
+                  <span className="text-sm font-semibold text-gray-900">{order.paymentMode || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Deadline</span>
-                  <span className="text-sm font-semibold text-gray-900">{order.deadline}</span>
+                  <span className="text-sm font-semibold text-gray-900">{new Date(order.deadline).toLocaleDateString()}</span>
                 </div>
               </div>
             </div>
@@ -238,10 +240,10 @@ export default function OrderDetailsPage() {
             <h2 className="text-xl font-bold text-gray-900 mb-4">Tailor Assignment</h2>
             <div className="flex items-center gap-3 p-4 bg-indigo-50 rounded-xl border border-indigo-200">
               <div className="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                R
+                {order.assignedTailor ? order.assignedTailor.name.charAt(0) : 'N/A'}
               </div>
               <div>
-                <p className="font-bold text-gray-900">{order.assignedTo}</p>
+                <p className="font-bold text-gray-900">{order.assignedTailor ? order.assignedTailor.name : 'Not Assigned'}</p>
                 <p className="text-sm text-gray-600">Tailor</p>
               </div>
             </div>
@@ -264,26 +266,18 @@ export default function OrderDetailsPage() {
               
               {/* Timeline Items */}
               <div className="space-y-6">
-                {order.statusHistory.map((item, index) => (
+                {order.timeline.map((item, index) => (
                   <div key={index} className="relative flex items-start gap-6">
-                    <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center ${
-                      item.completed ? 'bg-green-600' : 'bg-gray-200'
-                    }`}>
-                      {item.completed ? (
-                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      ) : (
-                        <div className="w-3 h-3 bg-white rounded-full"></div>
-                      )}
+                    <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center bg-green-600`}>
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
                     </div>
                     <div className="flex-1 pt-1">
-                      <h3 className={`font-bold ${item.completed ? 'text-gray-900' : 'text-gray-400'}`}>
-                        {item.status}
+                      <h3 className="font-bold text-gray-900">
+                        {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
                       </h3>
-                      {item.date && (
-                        <p className="text-sm text-gray-500">{item.date}</p>
-                      )}
+                      <p className="text-sm text-gray-500">{new Date(item.at).toLocaleString()}</p>
                     </div>
                   </div>
                 ))}
@@ -327,33 +321,31 @@ export default function OrderDetailsPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Order Items</h2>
             
             <div className="space-y-6">
-              {order.items.map((item, index) => (
-                <div key={index} className="p-6 bg-gray-50 rounded-xl border border-gray-200">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-bold text-gray-900">{item.garment}</h3>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
-                      <p className="text-xl font-bold text-blue-600">
-                        ₹{(item.quantity * item.costPerItem).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-white rounded-xl p-4">
-                    <h4 className="font-bold text-gray-900 mb-3">Measurements</h4>
-                    <div className="grid grid-cols-3 gap-4">
-                      {Object.entries(item.measurements).map(([key, value]) => (
-                        <div key={key}>
-                          <p className="text-xs text-gray-500 capitalize">
-                            {key.replace(/([A-Z])/g, ' $1').trim()}
-                          </p>
-                          <p className="font-semibold text-gray-900">{value} inches</p>
-                        </div>
-                      ))}
-                    </div>
+              <div className="p-6 bg-gray-50 rounded-xl border border-gray-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-gray-900">{order.garmentType}</h3>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-600">Quantity: 1</p>
+                    <p className="text-xl font-bold text-blue-600">
+                      ₹{order.billing.amount.toLocaleString()}
+                    </p>
                   </div>
                 </div>
-              ))}
+                
+                <div className="bg-white rounded-xl p-4">
+                  <h4 className="font-bold text-gray-900 mb-3">Measurements</h4>
+                  <div className="grid grid-cols-3 gap-4">
+                    {Object.entries(order.measurements).map(([key, value]) => (
+                      <div key={key}>
+                        <p className="text-xs text-gray-500 capitalize">
+                          {key.replace(/([A-Z])/g, ' $1').trim()}
+                        </p>
+                        <p className="font-semibold text-gray-900">{value} inches</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -367,7 +359,7 @@ export default function OrderDetailsPage() {
                 </svg>
                 <div>
                   <p className="text-sm text-gray-500">Fit Preference</p>
-                  <p className="font-semibold text-gray-900">{order.preferences.fitPreference}</p>
+                  <p className="font-semibold text-gray-900">{order.preferences?.fitPreference || 'N/A'}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -376,7 +368,7 @@ export default function OrderDetailsPage() {
                 </svg>
                 <div>
                   <p className="text-sm text-gray-500">Fabric Type</p>
-                  <p className="font-semibold text-gray-900">{order.preferences.fabricType}</p>
+                  <p className="font-semibold text-gray-900">{order.preferences?.fabricType || 'N/A'}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -385,7 +377,7 @@ export default function OrderDetailsPage() {
                 </svg>
                 <div>
                   <p className="text-sm text-gray-500">Special Instructions</p>
-                  <p className="font-semibold text-gray-900">{order.preferences.specialInstructions}</p>
+                  <p className="font-semibold text-gray-900">{order.preferences?.specialInstructions || 'N/A'}</p>
                 </div>
               </div>
             </div>
@@ -451,7 +443,7 @@ export default function OrderDetailsPage() {
             </div>
             <h2 className="text-2xl font-black text-gray-900 text-center mb-2">Delete Order?</h2>
             <p className="text-gray-600 text-center mb-6">
-              Are you sure you want to delete order <strong>{order.id}</strong>? This action cannot be undone.
+              Are you sure you want to delete order <strong>{order._id}</strong>? This action cannot be undone.
             </p>
             <div className="flex gap-3">
               <button

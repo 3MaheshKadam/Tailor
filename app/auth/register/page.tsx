@@ -8,7 +8,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     shopName: '',
-    ownerName: '',
+    name: '',
     email: '',
     phone: '',
     address: '',
@@ -19,6 +19,8 @@ export default function RegisterPage() {
   });
 
   const [errors, setErrors] = useState<any>({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -38,7 +40,7 @@ export default function RegisterPage() {
     const newErrors: any = {};
 
     if (!formData.shopName.trim()) newErrors.shopName = 'Shop name is required';
-    if (!formData.ownerName.trim()) newErrors.ownerName = 'Owner name is required';
+    if (!formData.name.trim()) newErrors.name = 'Name is required';
     if (!formData.email.trim()) newErrors.email = 'Email is required';
     if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
     if (formData.phone.trim() && !/^[0-9]{10}$/.test(formData.phone)) {
@@ -59,15 +61,45 @@ export default function RegisterPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (validateForm()) {
-      // Show success message and redirect
-      alert('Registration successful! Redirecting to dashboard...');
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          role: 'tailor', // Hardcoded as 'tailor' since this is shop registration
+          shopName: formData.shopName,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+      console.log('Registration response:', data);
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Registration failed');
+      }
+
+      alert('Registration successful! Redirecting to login...');
       setTimeout(() => {
-        router.push('/admin/dashboard');
+        router.push('/auth/login');
       }, 500);
+    } catch (err: any) {
+      setErrors({ ...errors, general: err.message });
     }
   };
 
@@ -96,6 +128,11 @@ export default function RegisterPage() {
 
         {/* Registration Form */}
         <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 p-8 lg:p-12">
+          {errors.general && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-center">
+              {errors.general}
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-6">
             
             {/* Shop Information */}
@@ -118,7 +155,7 @@ export default function RegisterPage() {
                     name="shopName"
                     value={formData.shopName}
                     onChange={handleChange}
-                    className={`w-full px-4 py-3 rounded-xl border-2 ${
+                    className={`w-full px-4 py-3 rounded-xl border-2 text-gray-900 ${
                       errors.shopName ? 'border-red-500' : 'border-gray-200'
                     } focus:border-blue-600 focus:outline-none transition-colors text-lg`}
                     placeholder="Kumar Tailors"
@@ -126,22 +163,22 @@ export default function RegisterPage() {
                   {errors.shopName && <p className="text-red-500 text-sm mt-1">{errors.shopName}</p>}
                 </div>
 
-                {/* Owner Name */}
+                {/* Name */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Owner Name <span className="text-red-500">*</span>
+                    Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    name="ownerName"
-                    value={formData.ownerName}
+                    name="name"
+                    value={formData.name}
                     onChange={handleChange}
-                    className={`w-full px-4 py-3 rounded-xl border-2 ${
-                      errors.ownerName ? 'border-red-500' : 'border-gray-200'
+                    className={`w-full px-4 py-3 rounded-xl border-2 text-gray-900 ${
+                      errors.name ? 'border-red-500' : 'border-gray-200'
                     } focus:border-blue-600 focus:outline-none transition-colors text-lg`}
-                    placeholder="Rajesh Kumar"
+                    // placeholder="Rajesh Kumar"
                   />
-                  {errors.ownerName && <p className="text-red-500 text-sm mt-1">{errors.ownerName}</p>}
+                  {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
                 </div>
 
                 {/* Email */}
@@ -154,10 +191,10 @@ export default function RegisterPage() {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className={`w-full px-4 py-3 rounded-xl border-2 ${
+                    className={`w-full px-4 py-3 rounded-xl border-2 text-gray-900 ${
                       errors.email ? 'border-red-500' : 'border-gray-200'
                     } focus:border-blue-600 focus:outline-none transition-colors text-lg`}
-                    placeholder="rajesh@kumartailors.com"
+                    // placeholder="rajesh@kumartailors.com"
                   />
                   {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
                 </div>
@@ -172,10 +209,10 @@ export default function RegisterPage() {
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
-                    className={`w-full px-4 py-3 rounded-xl border-2 ${
+                    className={`w-full px-4 py-3 rounded-xl border-2 text-gray-900 ${
                       errors.phone ? 'border-red-500' : 'border-gray-200'
                     } focus:border-blue-600 focus:outline-none transition-colors text-lg`}
-                    placeholder="9876543210"
+                    placeholder="9********5"
                     maxLength={10}
                   />
                   {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
@@ -204,10 +241,10 @@ export default function RegisterPage() {
                     value={formData.address}
                     onChange={handleChange}
                     rows={3}
-                    className={`w-full px-4 py-3 rounded-xl border-2 ${
+                    className={`w-full px-4 py-3 rounded-xl border-2 text-gray-900 ${
                       errors.address ? 'border-red-500' : 'border-gray-200'
                     } focus:border-blue-600 focus:outline-none transition-colors text-lg resize-none`}
-                    placeholder="Shop No. 12, MG Road"
+                    // placeholder="Shop No. 12, MG Road"
                   />
                   {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
                 </div>
@@ -223,10 +260,10 @@ export default function RegisterPage() {
                       name="city"
                       value={formData.city}
                       onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-xl border-2 ${
+                      className={`w-full px-4 py-3 rounded-xl border-2 text-gray-900 ${
                         errors.city ? 'border-red-500' : 'border-gray-200'
                       } focus:border-blue-600 focus:outline-none transition-colors text-lg`}
-                      placeholder="Mumbai"
+                      // placeholder="Mumbai"
                     />
                     {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
                   </div>
@@ -241,7 +278,7 @@ export default function RegisterPage() {
                       name="state"
                       value={formData.state}
                       onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-xl border-2 ${
+                      className={`w-full px-4 py-3 rounded-xl border-2 text-gray-900 ${
                         errors.state ? 'border-red-500' : 'border-gray-200'
                       } focus:border-blue-600 focus:outline-none transition-colors text-lg`}
                       placeholder="Maharashtra"
@@ -263,38 +300,72 @@ export default function RegisterPage() {
 
               <div className="grid md:grid-cols-2 gap-6">
                 {/* Password */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <div className="relative">
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
                     Password <span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
-                    className={`w-full px-4 py-3 rounded-xl border-2 ${
+                    className={`w-full px-4 py-3 rounded-xl border-2 text-gray-900 ${
                       errors.password ? 'border-red-500' : 'border-gray-200'
                     } focus:border-blue-600 focus:outline-none transition-colors text-lg`}
                     placeholder="••••••••"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-10 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.418 0-8-3.582-8-8 0-.318.019-.635.056-.947M12 5c4.418 0 8 3.582 8 8 0 .318-.019.635-.056.947m-1.819 3.928A10.05 10.05 0 0012 21c-2.645 0-5.053-1.021-6.875-2.825M4.1 13.9A9.984 9.984 0 013 11c0-4.418 3.582-8 8-8 .927 0 1.82.133 2.675.38M20.9 10.1A9.984 9.984 0 0121 13c0 4.418-3.582 8-8 8-.927 0-1.82-.133-2.675-.38M9 11a3 3 0 016 0" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4l16 16" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
                   {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
                 </div>
 
                 {/* Confirm Password */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <div className="relative">
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
                     Confirm Password <span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    className={`w-full px-4 py-3 rounded-xl border-2 ${
+                    className={`w-full px-4 py-3 rounded-xl border-2 text-gray-900 ${
                       errors.confirmPassword ? 'border-red-500' : 'border-gray-200'
                     } focus:border-blue-600 focus:outline-none transition-colors text-lg`}
                     placeholder="••••••••"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-10 text-gray-500 hover:text-gray-700"
+                  >
+                    {showConfirmPassword ? (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.418 0-8-3.582-8-8 0-.318.019-.635.056-.947M12 5c4.418 0 8 3.582 8 8 0 .318-.019.635-.056.947m-1.819 3.928A10.05 10.05 0 0012 21c-2.645 0-5.053-1.021-6.875-2.825M4.1 13.9A9.984 9.984 0 013 11c0-4.418 3.582-8 8-8 .927 0 1.82.133 2.675.38M20.9 10.1A9.984 9.984 0 0121 13c0 4.418-3.582 8-8 8-.927 0-1.82-.133-2.675-.38M9 11a3 3 0 016 0" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4l16 16" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
                   {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
                 </div>
               </div>

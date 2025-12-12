@@ -1,15 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 export default function AdminDashboard() {
-  // Dummy data for stats
-  const stats = [
+  const [orders, setOrders] = useState([]);
+  const [stats, setStats] = useState([
     {
       title: 'Total Orders',
-      value: '24',
-      change: '+12%',
-      changeType: 'increase',
+      value: '0',
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -21,9 +20,7 @@ export default function AdminDashboard() {
     },
     {
       title: 'Pending Orders',
-      value: '8',
-      change: '+3',
-      changeType: 'increase',
+      value: '0',
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -35,9 +32,7 @@ export default function AdminDashboard() {
     },
     {
       title: 'Ready Today',
-      value: '5',
-      change: '+2',
-      changeType: 'increase',
+      value: '0',
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -47,80 +42,75 @@ export default function AdminDashboard() {
       bgColor: 'bg-green-50',
       textColor: 'text-green-600',
     },
-    {
-      title: 'Total Customers',
-      value: '156',
-      change: '+8',
-      changeType: 'increase',
-      icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-        </svg>
-      ),
-      color: 'from-purple-500 to-purple-600',
-      bgColor: 'bg-purple-50',
-      textColor: 'text-purple-600',
-    },
-  ];
+  ]);
 
-  // Dummy data for recent orders
-  const recentOrders = [
-    {
-      id: 'ORD-1234',
-      customer: 'Rajesh Kumar',
-      phone: '+91 98765 43210',
-      items: '2 Shirts + 1 Pant',
-      amount: '₹2,500',
-      status: 'In Progress',
-      statusColor: 'bg-yellow-100 text-yellow-700',
-      deadline: '15 Dec 2024',
-      assignedTo: 'Ramesh (Tailor)',
-    },
-    {
-      id: 'ORD-1235',
-      customer: 'Priya Sharma',
-      phone: '+91 98765 43211',
-      items: '1 Blouse',
-      amount: '₹800',
-      status: 'Ready',
-      statusColor: 'bg-green-100 text-green-700',
-      deadline: '10 Dec 2024',
-      assignedTo: 'Suresh (Tailor)',
-    },
-    {
-      id: 'ORD-1236',
-      customer: 'Amit Patel',
-      phone: '+91 98765 43212',
-      items: '3 Shirts',
-      amount: '₹3,600',
-      status: 'Measuring',
-      statusColor: 'bg-blue-100 text-blue-700',
-      deadline: '20 Dec 2024',
-      assignedTo: 'Not Assigned',
-    },
-    {
-      id: 'ORD-1237',
-      customer: 'Sneha Reddy',
-      phone: '+91 98765 43213',
-      items: '1 Kurta + 1 Pant',
-      amount: '₹2,200',
-      status: 'In Progress',
-      statusColor: 'bg-yellow-100 text-yellow-700',
-      deadline: '18 Dec 2024',
-      assignedTo: 'Ramesh (Tailor)',
-    },
-    {
-      id: 'ORD-1238',
-      customer: 'Vikram Singh',
-      phone: '+91 98765 43214',
-      items: '2 Pants',
-      amount: '₹1,800',
-      status: 'Ready',
-      statusColor: 'bg-green-100 text-green-700',
-      deadline: '12 Dec 2024',
-      assignedTo: 'Suresh (Tailor)',
-    },
-  ];
+  useEffect(() => {
+    const fetchOrders = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        // Redirect to login if no token
+        window.location.href = '/auth/login';
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/orders', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch orders');
+        }
+
+        const data = await response.json();
+        setOrders(data.orders);
+
+        // Compute stats
+        const today = new Date(2025, 11, 12); // December 12, 2025
+
+        const parseDeadline = (dateStr) => {
+          return new Date(dateStr);
+        };
+
+        const orderList = data.orders;
+        const totalOrders = orderList.length;
+        const pendingOrders = orderList.filter(o => ['measuring', 'tailoring'].includes(o.status)).length;
+        const readyToday = orderList.filter(o => 
+          o.status === 'ready' && 
+          parseDeadline(o.deadline).toDateString() === today.toDateString()
+        ).length;
+
+        setStats([
+          { ...stats[0], value: totalOrders.toString() },
+          { ...stats[1], value: pendingOrders.toString() },
+          { ...stats[2], value: readyToday.toString() },
+        ]);
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+        // Handle error, perhaps show message
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
+  const recentOrders = orders.slice(-5).reverse(); // Last 5 recent orders
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'measuring':
+        return 'bg-blue-100 text-blue-700';
+      case 'tailoring':
+        return 'bg-yellow-100 text-yellow-700';
+      case 'ready':
+        return 'bg-green-100 text-green-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -143,7 +133,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {stats.map((stat, index) => (
           <div
             key={index}
@@ -153,9 +143,6 @@ export default function AdminDashboard() {
               <div className={`w-14 h-14 ${stat.bgColor} rounded-xl flex items-center justify-center ${stat.textColor}`}>
                 {stat.icon}
               </div>
-              <span className={`px-3 py-1 ${stat.bgColor} ${stat.textColor} text-sm font-bold rounded-full`}>
-                {stat.change}
-              </span>
             </div>
             <h3 className="text-gray-600 text-sm font-semibold mb-1">{stat.title}</h3>
             <p className="text-4xl font-black text-gray-900">{stat.value}</p>
@@ -166,7 +153,7 @@ export default function AdminDashboard() {
       {/* Quick Actions */}
       <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Quick Actions</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <Link
             href="/admin/orders/new"
             className="group p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 hover:border-blue-400 transition-all hover:shadow-lg"
@@ -178,19 +165,6 @@ export default function AdminDashboard() {
             </div>
             <h3 className="font-bold text-gray-900 mb-1">Create Order</h3>
             <p className="text-sm text-gray-600">Add new customer order</p>
-          </Link>
-
-          <Link
-            href="/admin/customers/new"
-            className="group p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-200 hover:border-purple-400 transition-all hover:shadow-lg"
-          >
-            <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-              </svg>
-            </div>
-            <h3 className="font-bold text-gray-900 mb-1">Add Customer</h3>
-            <p className="text-sm text-gray-600">Register new customer</p>
           </Link>
 
           <Link
@@ -206,18 +180,6 @@ export default function AdminDashboard() {
             <p className="text-sm text-gray-600">See all orders</p>
           </Link>
 
-          <Link
-            href="/admin/customers"
-            className="group p-6 bg-gradient-to-br from-orange-50 to-red-50 rounded-xl border-2 border-orange-200 hover:border-orange-400 transition-all hover:shadow-lg"
-          >
-            <div className="w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            </div>
-            <h3 className="font-bold text-gray-900 mb-1">View Customers</h3>
-            <p className="text-sm text-gray-600">See customer list</p>
-          </Link>
         </div>
       </div>
 
@@ -243,7 +205,7 @@ export default function AdminDashboard() {
               <tr>
                 <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Order ID</th>
                 <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Customer</th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Items</th>
+                <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Garment Type</th>
                 <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Amount</th>
                 <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Status</th>
                 <th className="px-6 py-4 text-left text-sm font-bold text-gray-700">Deadline</th>
@@ -252,29 +214,29 @@ export default function AdminDashboard() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {recentOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={order._id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
-                    <span className="font-bold text-gray-900">{order.id}</span>
+                    <span className="font-bold text-gray-900">{order._id}</span>
                   </td>
                   <td className="px-6 py-4">
                     <div>
-                      <p className="font-semibold text-gray-900">{order.customer}</p>
-                      <p className="text-sm text-gray-500">{order.phone}</p>
+                      <p className="font-semibold text-gray-900">{order.customerName || (order.copies?.admin?.customer?.name || `Customer ID: ${order.customerId}`)}</p>
+                      <p className="text-sm text-gray-500">{order.customerPhone || (order.copies?.admin?.customer?.phone || 'N/A')}</p>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-gray-700">{order.items}</td>
+                  <td className="px-6 py-4 text-gray-700">{order.garmentType}</td>
                   <td className="px-6 py-4">
-                    <span className="font-bold text-gray-900">{order.amount}</span>
+                    <span className="font-bold text-gray-900">₹{order.billing.amount}</span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${order.statusColor}`}>
-                      {order.status}
+                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(order.status)}`}>
+                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-gray-700">{order.deadline}</td>
+                  <td className="px-6 py-4 text-gray-700">{new Date(order.deadline).toLocaleDateString('en-IN')}</td>
                   <td className="px-6 py-4">
                     <Link
-                      href={`/admin/orders/${order.id}`}
+                      href={`/admin/orders/${order._id}`}
                       className="px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 rounded-lg transition-colors inline-block"
                     >
                       View

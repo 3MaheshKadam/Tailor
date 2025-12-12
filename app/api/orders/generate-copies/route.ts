@@ -2,7 +2,6 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Order from "@/lib/models/Order";
-import Customer from "@/lib/models/Customer";
 import Tailor from "@/lib/models/Tailor";
 import { requireRole } from "@/lib/auth";
 

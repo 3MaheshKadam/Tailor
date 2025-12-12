@@ -1,4 +1,4 @@
-// app/api/tailor/assign/route.ts
+
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Order from "@/lib/models/Order";
