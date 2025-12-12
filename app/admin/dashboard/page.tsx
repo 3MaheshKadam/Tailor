@@ -71,9 +71,9 @@ export default function AdminDashboard() {
         // Compute stats
         const today = new Date(2025, 11, 12); // December 12, 2025
 
-        const parseDeadline = (dateStr) => {
-          return new Date(dateStr);
-        };
+       const parseDeadline = (dateStr: string) => {
+  return new Date(dateStr);
+};
 
         const orderList = data.orders;
         const totalOrders = orderList.length;
